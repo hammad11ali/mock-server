@@ -1,0 +1,22 @@
+# ESLint ignore patterns
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Configuration files that don't need linting
+*.config.js
+*.config.ts
+
+# Environment files
+.env*
+
+# Generated files
+*.d.ts
+
+# Test files (if you want to exclude them)
+# **/*.test.ts
+# **/*.spec.ts

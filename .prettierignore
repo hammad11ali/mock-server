@@ -1,0 +1,21 @@
+# Prettier ignore patterns
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Package files
+package.json
+package-lock.json
+
+# Logs
+*.log
+
+# Generated files
+*.d.ts
+
+# Markdown files (if you want to skip formatting)
+# *.md
