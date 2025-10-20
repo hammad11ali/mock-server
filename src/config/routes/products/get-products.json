@@ -1,6 +1,6 @@
 {
   "method": "GET",
-  "path": "/api/products",
+  "path": "/products",
   "conditions": [
     {
       "when": {

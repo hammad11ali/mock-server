@@ -44,6 +44,10 @@ export class RequestMatcher {
 
     for (const config of allConfigs) {
       if (this.matchesRoute(config, method, path)) {
+        // Extract path parameters and add them to request
+        const pathParams = RequestMatcher.extractPathParams(config.path, path);
+        req.params = { ...req.params, ...pathParams };
+        
         const templateContext = TemplateEngine.createContextFromRequest(req);
         const matchedResponse = this.findMatchingResponse(config, templateContext);
         

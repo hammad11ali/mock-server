@@ -33,7 +33,7 @@ File: `src/config/routes/users/get-users.json`
 ```json
 {
   "method": "GET",
-  "path": "/api/users",
+  "path": "/users",
   "conditions": [
     {
       "when": { "query.status": "active" },

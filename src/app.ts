@@ -19,7 +19,7 @@ async function startServer() {
         app.get('/', dynamicMockController.healthCheck.bind(dynamicMockController));
 
         // Dynamic mock system - catch all API routes
-        app.use('/api/*', ...dynamicMockController.getMiddleware());
+        app.use('/api', ...dynamicMockController.getMiddleware());
 
         // 404 handler for unmatched routes
         app.use('*', (req, res) => {

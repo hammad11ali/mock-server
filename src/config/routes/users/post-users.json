@@ -1,6 +1,6 @@
 {
   "method": "POST",
-  "path": "/api/users",
+  "path": "/users",
   "conditions": [
     {
       "when": {
