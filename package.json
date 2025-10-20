@@ -4,18 +4,17 @@
   "description": "A mock server using Express and TypeScript to provide mock JSON responses.",
   "main": "dist/app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-assets",
+    "copy-assets": "xcopy src\\config\\*.* dist\\config\\ /E /I /Y && xcopy src\\data\\*.* dist\\data\\ /E /I /Y",
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts",
     "watch": "tsc -w"
   },
   "dependencies": {
-    "chokidar": "^4.0.3",
     "express": "^4.17.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@types/chokidar": "^1.7.5",
     "@types/express": "^4.17.13",
     "@types/node": "^16.11.7",
     "@types/uuid": "^10.0.0",

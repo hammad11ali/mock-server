@@ -9,7 +9,6 @@
     "statusCode": 200
   },
   "server": {
-    "hotReload": true,
     "corsEnabled": true,
     "requestLogging": true
   },

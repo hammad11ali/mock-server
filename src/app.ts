@@ -1,6 +1,5 @@
 import express from 'express';
 import { DynamicMockController } from './controllers/mockController';
-import { setMockRoutes } from './routes/mockRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,9 +18,6 @@ async function startServer() {
         // Health check endpoint
         app.get('/', dynamicMockController.healthCheck.bind(dynamicMockController));
 
-        // Set up legacy routes (for backward compatibility)
-        setMockRoutes(app);
-
         // Dynamic mock system - catch all API routes
         app.use('/api/*', ...dynamicMockController.getMiddleware());
 
@@ -32,7 +28,6 @@ async function startServer() {
                 message: `No route found for ${req.method} ${req.path}`,
                 availableEndpoints: {
                     health: 'GET /',
-                    legacy: 'GET /api/mock-data',
                     dynamic: 'GET|POST|PUT|DELETE /api/*'
                 }
             });
@@ -51,16 +46,13 @@ async function startServer() {
             console.log('🚀 Dynamic Mock Server started successfully!');
             console.log(`📍 Server running on: http://localhost:${PORT}`);
             console.log(`🏥 Health check: http://localhost:${PORT}/`);
-            console.log(`📊 Legacy API: http://localhost:${PORT}/api/mock-data`);
-            console.log(`🔄 Dynamic APIs: http://localhost:${PORT}/api/*`);
+            console.log(` Dynamic APIs: http://localhost:${PORT}/api/*`);
             console.log('');
             console.log('✨ Available dynamic endpoints:');
             console.log('   GET  /api/users - List all users');
             console.log('   GET  /api/users/:id - Get user by ID');
             console.log('   POST /api/users - Create new user');
             console.log('   GET  /api/products - List all products');
-            console.log('');
-            console.log('🔧 Hot-reload enabled for config changes');
         });
 
     } catch (error) {

@@ -41,8 +41,7 @@ export class DynamicMockController {
       timestamp: new Date().toISOString(),
       configuration: {
         globalConfigLoaded: !!globalConfig,
-        routeConfigsCount: routeConfigs.length,
-        hotReloadEnabled: globalConfig?.server.hotReload || false
+        routeConfigsCount: routeConfigs.length
       },
       availableRoutes: routeConfigs.map(config => ({
         method: config.method,
@@ -52,20 +51,3 @@ export class DynamicMockController {
     });
   }
 }
-
-// Legacy controller for backward compatibility
-class MockController {
-    getMockData(req: Request, res: Response) {
-        const mockData = {
-            message: "This is a mock response (legacy)",
-            data: [
-                { id: 1, name: "Item 1" },
-                { id: 2, name: "Item 2" },
-                { id: 3, name: "Item 3" }
-            ]
-        };
-        res.json(mockData);
-    }
-}
-
-export default MockController;

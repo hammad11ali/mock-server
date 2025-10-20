@@ -1,4 +1,3 @@
-import * as chokidar from 'chokidar';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -23,7 +22,6 @@ export interface GlobalConfig {
     statusCode: number;
   };
   server: {
-    hotReload: boolean;
     corsEnabled: boolean;
     requestLogging: boolean;
   };
@@ -37,7 +35,6 @@ export class ConfigLoader {
   private configDir: string;
   private dataDir: string;
   private dataCache: Map<string, any> = new Map();
-  private watchers: chokidar.FSWatcher[] = [];
 
   constructor(configDir: string, dataDir: string) {
     this.configDir = configDir;
@@ -58,10 +55,6 @@ export class ConfigLoader {
     await this.loadGlobalConfig();
     await this.loadRouteConfigs();
     await this.loadDataFiles();
-    
-    if (this.globalConfig?.server.hotReload) {
-      this.setupWatchers();
-    }
   }
 
   private async loadGlobalConfig(): Promise<void> {
@@ -80,7 +73,6 @@ export class ConfigLoader {
           statusCode: 200
         },
         server: {
-          hotReload: true,
           corsEnabled: true,
           requestLogging: true
         },
@@ -158,33 +150,7 @@ export class ConfigLoader {
     }
   }
 
-  private setupWatchers(): void {
-    // Watch config files
-    const configWatcher = chokidar.watch([
-      path.join(this.configDir, '**/*.json')
-    ], { ignoreInitial: true });
 
-    configWatcher.on('change', async (filePath: string) => {
-      console.log(`🔄 Config file changed: ${filePath}`);
-      if (filePath.includes('global.json')) {
-        await this.loadGlobalConfig();
-      } else {
-        await this.loadRouteConfigs();
-      }
-    });
-
-    // Watch data files
-    const dataWatcher = chokidar.watch([
-      path.join(this.dataDir, '*.json')
-    ], { ignoreInitial: true });
-
-    dataWatcher.on('change', async (filePath: string) => {
-      console.log(`🔄 Data file changed: ${filePath}`);
-      await this.loadDataFiles();
-    });
-
-    this.watchers.push(configWatcher, dataWatcher);
-  }
 
   getRouteConfig(method: string, path: string): RouteConfig | undefined {
     const key = `${method.toUpperCase()}:${path}`;
@@ -214,7 +180,6 @@ export class ConfigLoader {
   }
 
   destroy(): void {
-    this.watchers.forEach(watcher => watcher.close());
-    this.watchers = [];
+    // Cleanup resources if needed
   }
 }
