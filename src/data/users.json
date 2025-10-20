@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "status": "active",
+    "role": "user",
+    "createdAt": "2023-01-15T10:30:00Z",
+    "profile": {
+      "age": 28,
+      "department": "Engineering",
+      "location": "New York"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Jane Smith",
+    "email": "jane.smith@example.com", 
+    "status": "active",
+    "role": "admin",
+    "createdAt": "2023-02-20T14:15:00Z",
+    "profile": {
+      "age": 32,
+      "department": "Management",
+      "location": "California"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Bob Johnson",
+    "email": "bob.johnson@example.com",
+    "status": "inactive",
+    "role": "user",
+    "createdAt": "2023-03-10T09:45:00Z",
+    "profile": {
+      "age": 25,
+      "department": "Marketing",
+      "location": "Texas"
+    }
+  },
+  {
+    "id": 4,
+    "name": "Alice Brown",
+    "email": "alice.brown@example.com",
+    "status": "active",
+    "role": "premium",
+    "createdAt": "2023-04-05T16:20:00Z",
+    "profile": {
+      "age": 30,
+      "department": "Design",
+      "location": "Washington"
+    }
+  }
+]

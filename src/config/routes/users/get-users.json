@@ -1,0 +1,44 @@
+{
+  "method": "GET",
+  "path": "/api/users",
+  "conditions": [
+    {
+      "when": {
+        "query.status": "active"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "dataFile": "users.json",
+          "filter": { "status": "active" }
+        },
+        "latency": {
+          "enabled": true,
+          "delay": 200
+        }
+      }
+    },
+    {
+      "when": {
+        "query.limit": { "exists": true }
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "data": {
+            "users": "{{limitedUsers}}",
+            "total": "{{query.limit}}",
+            "message": "Limited users list"
+          }
+        }
+      }
+    }
+  ],
+  "defaultResponse": {
+    "statusCode": 200,
+    "body": {
+      "dataFile": "users.json"
+    },
+    "timeout": 3000
+  }
+}

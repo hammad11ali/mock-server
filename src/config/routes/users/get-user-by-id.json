@@ -1,0 +1,55 @@
+{
+  "method": "GET",
+  "path": "/api/users/:id",
+  "conditions": [
+    {
+      "when": {
+        "params.id": "999"
+      },
+      "response": {
+        "statusCode": 404,
+        "body": {
+          "data": {
+            "error": "User not found",
+            "code": "USER_NOT_FOUND",
+            "requestedId": "{{params.id}}"
+          }
+        },
+        "latency": {
+          "enabled": true,
+          "delay": 1000
+        }
+      }
+    },
+    {
+      "when": {
+        "params.id": { "exists": true }
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "data": {
+            "id": "{{params.id}}",
+            "name": "Sample User {{params.id}}",
+            "email": "user{{params.id}}@example.com",
+            "status": "active",
+            "createdAt": "{{currentTimestamp}}",
+            "profile": {
+              "userId": "{{params.id}}",
+              "displayName": "User #{{params.id}}",
+              "lastLogin": "{{currentDate}}"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "defaultResponse": {
+    "statusCode": 400,
+    "body": {
+      "data": {
+        "error": "Invalid user ID"
+      }
+    }
+  }
+}

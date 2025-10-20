@@ -1,0 +1,25 @@
+{
+  "defaults": {
+    "latency": {
+      "enabled": false,
+      "min": 100,
+      "max": 500
+    },
+    "timeout": 5000,
+    "statusCode": 200
+  },
+  "server": {
+    "hotReload": true,
+    "corsEnabled": true,
+    "requestLogging": true
+  },
+  "templateVariables": {
+    "system": {
+      "currentTimestamp": "function",
+      "currentDate": "function", 
+      "generateId": "function",
+      "randomNumber": "function",
+      "randomEmail": "function"
+    }
+  }
+}

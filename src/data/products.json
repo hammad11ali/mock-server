@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "name": "Laptop Pro",
+    "price": 1299.99,
+    "category": "electronics",
+    "inStock": true,
+    "description": "High-performance laptop for professionals",
+    "specifications": {
+      "processor": "Intel i7",
+      "memory": "16GB RAM",
+      "storage": "512GB SSD"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Wireless Headphones",
+    "price": 199.99,
+    "category": "electronics",
+    "inStock": true,
+    "description": "Premium noise-canceling headphones",
+    "specifications": {
+      "type": "Over-ear",
+      "battery": "30 hours",
+      "connectivity": "Bluetooth 5.0"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Coffee Maker",
+    "price": 89.99,
+    "category": "appliances",
+    "inStock": false,
+    "description": "Automatic drip coffee maker",
+    "specifications": {
+      "capacity": "12 cups",
+      "features": ["programmable", "auto-shutoff"],
+      "warranty": "2 years"
+    }
+  },
+  {
+    "id": 4,
+    "name": "Gaming Mouse",
+    "price": 59.99,
+    "category": "electronics",
+    "inStock": true,
+    "description": "High-precision gaming mouse",
+    "specifications": {
+      "dpi": "16000",
+      "buttons": 8,
+      "connectivity": "USB-C"
+    }
+  }
+]

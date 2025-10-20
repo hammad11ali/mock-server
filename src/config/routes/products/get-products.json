@@ -1,0 +1,54 @@
+{
+  "method": "GET",
+  "path": "/api/products",
+  "conditions": [
+    {
+      "when": {
+        "query.category": "electronics"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "dataFile": "products.json",
+          "filter": { "category": "electronics" }
+        }
+      }
+    },
+    {
+      "when": {
+        "query.featured": "true"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "data": {
+            "products": [
+              {
+                "id": 1,
+                "name": "Featured Product 1",
+                "price": 99.99,
+                "category": "featured",
+                "inStock": true
+              },
+              {
+                "id": 2,
+                "name": "Featured Product 2", 
+                "price": 149.99,
+                "category": "featured",
+                "inStock": true
+              }
+            ],
+            "total": 2,
+            "message": "Featured products"
+          }
+        }
+      }
+    }
+  ],
+  "defaultResponse": {
+    "statusCode": 200,
+    "body": {
+      "dataFile": "products.json"
+    }
+  }
+}

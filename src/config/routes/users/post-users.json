@@ -1,0 +1,73 @@
+{
+  "method": "POST",
+  "path": "/api/users",
+  "conditions": [
+    {
+      "when": {
+        "body.email": { "exists": false }
+      },
+      "response": {
+        "statusCode": 400,
+        "body": {
+          "data": {
+            "error": "Email is required",
+            "code": "VALIDATION_ERROR",
+            "field": "email"
+          }
+        }
+      }
+    },
+    {
+      "when": {
+        "body.email": "admin@example.com"
+      },
+      "response": {
+        "statusCode": 409,
+        "body": {
+          "data": {
+            "error": "User already exists",
+            "code": "USER_EXISTS",
+            "email": "{{body.email}}"
+          }
+        },
+        "latency": {
+          "enabled": true,
+          "delay": 300
+        }
+      }
+    },
+    {
+      "when": {
+        "body.role": "premium"
+      },
+      "response": {
+        "statusCode": 201,
+        "body": {
+          "data": {
+            "id": "{{generateId}}",
+            "name": "{{body.name}}",
+            "email": "{{body.email}}",
+            "role": "premium",
+            "features": ["advanced_analytics", "priority_support"],
+            "createdAt": "{{currentTimestamp}}",
+            "message": "Premium user created successfully"
+          }
+        }
+      }
+    }
+  ],
+  "defaultResponse": {
+    "statusCode": 201,
+    "body": {
+      "data": {
+        "id": "{{generateId}}",
+        "name": "{{body.name}}",
+        "email": "{{body.email}}",
+        "role": "user",
+        "status": "active",
+        "createdAt": "{{currentTimestamp}}",
+        "message": "User created successfully"
+      }
+    }
+  }
+}
