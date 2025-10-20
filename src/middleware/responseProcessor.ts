@@ -98,7 +98,17 @@ export class ResponseProcessor {
 
       // Apply limit if specified
       if (body.limit && Array.isArray(responseData)) {
-        responseData = responseData.slice(0, body.limit);
+        let limitValue: number;
+        // Process template variables in limit
+        if (typeof body.limit === 'string') {
+          const processedLimit = TemplateEngine.processTemplate(body.limit, templateContext);
+          limitValue = parseInt(processedLimit, 10);
+        } else {
+          limitValue = body.limit;
+        }
+        if (!isNaN(limitValue) && limitValue > 0) {
+          responseData = responseData.slice(0, limitValue);
+        }
       }
     }
 

@@ -144,7 +144,109 @@ Create a JSON file in `src/config/routes/{resource}/{method}-{endpoint}.json`:
 }
 ```
 
-### 3. **Condition Operators**
+### 3. **Multiple Conditions & Logical Operators**
+
+#### **Implicit AND (All conditions must match)**
+```json
+{
+  "when": {
+    "query.status": "active",
+    "query.limit": { "exists": true },
+    "headers.authorization": { "exists": true }
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "message": "All conditions matched (implicit AND)"
+    }
+  }
+}
+```
+
+#### **Explicit AND Logic**
+```json
+{
+  "when": {
+    "$and": [
+      { "query.status": { "not": "inactive" } },
+      { "query.role": { "exists": true } },
+      { "query.limit": { "greaterThan": 0 } }
+    ]
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "message": "Explicit AND conditions matched"
+    }
+  }
+}
+```
+
+#### **OR Logic (Any condition must match)**
+```json
+{
+  "when": {
+    "$or": [
+      { "query.status": "premium" },
+      { "query.role": "admin" },
+      { "headers.x-special-access": { "exists": true } }
+    ]
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "message": "One of the OR conditions matched"
+    }
+  }
+}
+```
+
+#### **NOT Logic (Condition must not match)**
+```json
+{
+  "when": {
+    "$not": {
+      "query.status": "banned"
+    }
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "message": "User is not banned"
+    }
+  }
+}
+```
+
+#### **Complex Nested Logic**
+```json
+{
+  "when": {
+    "$and": [
+      {
+        "$or": [
+          { "query.status": "active" },
+          { "query.status": "premium" }
+        ]
+      },
+      { "query.limit": { "exists": true } },
+      {
+        "$not": {
+          "query.role": "guest"
+        }
+      }
+    ]
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "message": "Complex nested conditions matched"
+    }
+  }
+}
+```
+
+### 4. **Field-Level Condition Operators**
 
 ```json
 {
@@ -155,12 +257,30 @@ Create a JSON file in `src/config/routes/{resource}/{method}-{endpoint}.json`:
     "query.email": { "endsWith": "@company.com" },
     "query.status": { "in": ["active", "pending"] },
     "query.search": { "contains": "keyword" },
-    "query.required": { "exists": true }
+    "query.required": { "exists": true },
+    "query.role": { "not": "guest" }
   }
 }
 ```
 
-### 4. **Response Configuration**
+#### **Complete Operator Reference**
+
+| **Operator** | **Usage** | **Description** |
+|-------------|-----------|-----------------|
+| **Direct match** | `"field": "value"` | Exact value match |
+| **exists** | `{ "exists": true/false }` | Field exists/doesn't exist |
+| **not** | `{ "not": "value" }` | Field not equal to value |
+| **in** | `{ "in": ["val1", "val2"] }` | Value in array |
+| **contains** | `{ "contains": "substring" }` | String contains substring |
+| **startsWith** | `{ "startsWith": "prefix" }` | String starts with prefix |
+| **endsWith** | `{ "endsWith": "suffix" }` | String ends with suffix |
+| **greaterThan** | `{ "greaterThan": 18 }` | Numeric greater than |
+| **lessThan** | `{ "lessThan": 100 }` | Numeric less than |
+| **$and** | `{ "$and": [cond1, cond2] }` | All conditions must match |
+| **$or** | `{ "$or": [cond1, cond2] }` | Any condition must match |
+| **$not** | `{ "$not": condition }` | Condition must not match |
+
+### 5. **Response Configuration**
 
 #### **Status Codes**
 ```json

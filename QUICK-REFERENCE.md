@@ -26,9 +26,25 @@ curl -X POST http://localhost:3000/api/users \
   -d '{"name":"John","email":"john@test.com"}'
 ```
 
+### **Multiple Conditions Tests**
+```bash
+# Implicit AND: status=active AND limit exists
+curl "http://localhost:3000/api/users?status=active&limit=2"
+
+# OR logic: premium users OR admin role
+curl "http://localhost:3000/api/users?status=premium"
+curl "http://localhost:3000/api/users?role=admin"
+
+# Complex conditions: non-inactive users with role
+curl "http://localhost:3000/api/users?status=active&role=user"
+
+# PowerShell alternative (Windows)
+Invoke-RestMethod "http://localhost:3000/api/users?status=active&limit=2"
+```
+
 ## 🎯 Configuration Quick Start
 
-### **1. Create Route Config**
+### **1. Basic Route Config**
 File: `src/config/routes/users/get-users.json`
 ```json
 {
@@ -50,7 +66,77 @@ File: `src/config/routes/users/get-users.json`
 }
 ```
 
-### **2. Create Data File**
+### **2. Multiple Conditions Examples**
+
+#### **Implicit AND (All must match)**
+```json
+{
+  "when": {
+    "query.status": "active",
+    "query.limit": { "exists": true },
+    "headers.authorization": { "exists": true }
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "dataFile": "users.json",
+      "filter": { "status": "active" },
+      "limit": "{{query.limit}}"
+    }
+  }
+}
+```
+
+#### **OR Logic (Any must match)**
+```json
+{
+  "when": {
+    "$or": [
+      { "query.status": "premium" },
+      { "query.role": "admin" },
+      { "headers.x-vip-access": { "exists": true } }
+    ]
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "message": "VIP access granted",
+      "accessLevel": "premium"
+    }
+  }
+}
+```
+
+#### **Complex Nested Logic**
+```json
+{
+  "when": {
+    "$and": [
+      {
+        "$or": [
+          { "query.status": "active" },
+          { "query.status": "premium" }
+        ]
+      },
+      { "query.limit": { "exists": true } },
+      { "query.role": { "not": "guest" } }
+    ]
+  },
+  "response": {
+    "statusCode": 200,
+    "body": {
+      "dataFile": "users.json",
+      "dynamicFields": {
+        "message": "Complex condition matched",
+        "userType": "{{query.status}}",
+        "role": "{{query.role}}"
+      }
+    }
+  }
+}
+```
+
+### **3. Create Data File**
 File: `src/data/users.json`
 ```json
 [
@@ -75,16 +161,26 @@ File: `src/data/users.json`
 
 ## 🎛️ Condition Operators
 
+### **Field-Level Operators**
 | Operator | Example | Description |
 |----------|----------|-------------|
 | Direct match | `"status": "active"` | Exact string match |
 | `exists` | `"email": { "exists": true }` | Field must exist |
+| `not` | `"role": { "not": "guest" }` | Field not equal to value |
 | `contains` | `"name": { "contains": "John" }` | String contains |
 | `startsWith` | `"email": { "startsWith": "admin" }` | String starts with |
 | `endsWith` | `"email": { "endsWith": ".com" }` | String ends with |
 | `greaterThan` | `"age": { "greaterThan": 18 }` | Numeric comparison |
 | `lessThan` | `"score": { "lessThan": 100 }` | Numeric comparison |
 | `in` | `"role": { "in": ["admin", "user"] }` | Value in array |
+
+### **Logical Operators**
+| Operator | Example | Description |
+|----------|---------|-------------|
+| **Implicit AND** | `{ "status": "active", "limit": { "exists": true } }` | All conditions must match |
+| **`$and`** | `{ "$and": [{"status": "active"}, {"role": "admin"}] }` | Explicit AND logic |
+| **`$or`** | `{ "$or": [{"status": "premium"}, {"role": "vip"}] }` | Any condition must match |
+| **`$not`** | `{ "$not": {"status": "banned"} }` | Condition must not match |
 
 ## 📁 Response Body Options
 
@@ -199,6 +295,21 @@ File: `src/data/users.json`
 - Log request data to verify values
 - Test with simpler conditions first
 
+### **Logical Operators Not Working**
+- Ensure correct `$and`, `$or`, `$not` syntax
+- Check array format: `"$or": [condition1, condition2]`
+- Verify nested conditions are valid
+- Test individual conditions before combining
+
+### **Performance Issues**
+- Use implicit AND when possible (faster than `$and`)
+- Avoid deeply nested logical structures
+- Consider condition order (most specific first)
+
 ---
 
-**💡 Pro Tip:** Start simple and add complexity gradually. Test each condition individually before combining them!
+**💡 Pro Tips:** 
+- Start simple and add complexity gradually
+- Test each condition individually before combining
+- Use implicit AND (`{"a": "1", "b": "2"}`) for better performance than explicit `$and`
+- Place most specific conditions first for better matching

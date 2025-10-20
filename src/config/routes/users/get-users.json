@@ -4,17 +4,81 @@
   "conditions": [
     {
       "when": {
+        "query.status": "active",
+        "query.limit": { "exists": true }
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "dataFile": "users.json",
+          "filter": { "status": "active" },
+          "limit": "{{query.limit}}",
+          "dynamicFields": {
+            "message": "Active users with limit (implicit AND)",
+            "appliedFilters": "status=active AND limit={{query.limit}}"
+          }
+        },
+        "latency": {
+          "enabled": true,
+          "delay": 200
+        }
+      }
+    },
+    {
+      "when": {
+        "$or": [
+          { "query.status": "premium" },
+          { "query.role": "vip" }
+        ]
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "dataFile": "users.json",
+          "dynamicFields": {
+            "message": "Premium or VIP users (explicit OR)",
+            "filterType": "OR logic applied",
+            "matchedStatus": "{{query.status}}",
+            "matchedRole": "{{query.role}}"
+          }
+        }
+      }
+    },
+    {
+      "when": {
+        "$and": [
+          { "query.status": { "not": "inactive" } },
+          { "query.role": { "exists": true } }
+        ]
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "dataFile": "users.json",
+          "dynamicFields": {
+            "message": "Non-inactive users with role (explicit AND)",
+            "status": "{{query.status}}",
+            "role": "{{query.role}}"
+          }
+        }
+      }
+    },
+    {
+      "when": {
         "query.status": "active"
       },
       "response": {
         "statusCode": 200,
         "body": {
           "dataFile": "users.json",
-          "filter": { "status": "active" }
+          "filter": { "status": "active" },
+          "dynamicFields": {
+            "message": "Active users only"
+          }
         },
         "latency": {
           "enabled": true,
-          "delay": 200
+          "delay": 300
         }
       }
     },
@@ -25,10 +89,12 @@
       "response": {
         "statusCode": 200,
         "body": {
-          "data": {
-            "users": "{{limitedUsers}}",
+          "dataFile": "users.json",
+          "limit": "{{query.limit}}",
+          "dynamicFields": {
             "total": "{{query.limit}}",
-            "message": "Limited users list"
+            "message": "Limited users list",
+            "requestedLimit": "{{query.limit}}"
           }
         }
       }

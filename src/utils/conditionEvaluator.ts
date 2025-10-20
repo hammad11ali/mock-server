@@ -3,6 +3,7 @@ import { TemplateContext } from './templateEngine';
 export interface ConditionValue {
   exists?: boolean;
   equals?: any;
+  not?: any;
   contains?: string;
   startsWith?: string;
   endsWith?: string;
@@ -12,12 +13,37 @@ export interface ConditionValue {
 }
 
 export interface Condition {
-  [key: string]: string | number | boolean | ConditionValue;
+  // Logical operators
+  $and?: Condition[];
+  $or?: Condition[];
+  $not?: Condition;
+  
+  // Field conditions (any other property)
+  [key: string]: any;
 }
 
 export class ConditionEvaluator {
   static evaluate(condition: Condition, context: TemplateContext): boolean {
+    // Handle logical operators first
+    if (condition.$and) {
+      return condition.$and.every(cond => this.evaluate(cond, context));
+    }
+    
+    if (condition.$or) {
+      return condition.$or.some(cond => this.evaluate(cond, context));
+    }
+    
+    if (condition.$not) {
+      return !this.evaluate(condition.$not, context);
+    }
+
+    // Handle regular field conditions (implicit AND - all must match)
     for (const [key, expectedValue] of Object.entries(condition)) {
+      // Skip logical operators
+      if (key.startsWith('$')) {
+        continue;
+      }
+      
       const actualValue = this.getValueFromContext(key, context);
       
       if (!this.matchesCondition(actualValue, expectedValue)) {
@@ -61,14 +87,14 @@ export class ConditionEvaluator {
     return undefined;
   }
 
-  private static matchesCondition(actualValue: any, expectedValue: string | number | boolean | ConditionValue): boolean {
+  private static matchesCondition(actualValue: any, expectedValue: any): boolean {
     // Simple equality check
     if (typeof expectedValue === 'string' || typeof expectedValue === 'number' || typeof expectedValue === 'boolean') {
       return actualValue === expectedValue;
     }
 
     // Complex condition object
-    if (typeof expectedValue === 'object' && expectedValue !== null) {
+    if (typeof expectedValue === 'object' && expectedValue !== null && !Array.isArray(expectedValue)) {
       const condition = expectedValue as ConditionValue;
 
       // exists check
@@ -80,6 +106,11 @@ export class ConditionEvaluator {
       // equals check
       if (condition.equals !== undefined) {
         return actualValue === condition.equals;
+      }
+
+      // not equals check
+      if (condition.not !== undefined) {
+        return actualValue !== condition.not;
       }
 
       // contains check (for strings)
