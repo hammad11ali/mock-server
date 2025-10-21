@@ -8,7 +8,7 @@ const router = Router();
 
 // Serve admin HTML interface
 router.get('/', (req: Request, res: Response) => {
-  const htmlPath = path.join(process.cwd(), 'src', 'admin.html');
+  const htmlPath = path.join(__dirname, '..', 'admin.html');
   res.sendFile(htmlPath);
 });
 
@@ -88,8 +88,9 @@ async function scanDirectory(dirPath: string, basePath: string = ''): Promise<an
 // Get directory structure and file listing
 router.get('/files', async (req: Request, res: Response) => {
   try {
-    const configPath = path.join(process.cwd(), 'src', 'config');
-    const dataPath = path.join(process.cwd(), 'src', 'data');
+    // Use __dirname to get the correct path (works for both src and dist)
+    const configPath = path.join(__dirname, '..', 'config');
+    const dataPath = path.join(__dirname, '..', 'data');
     
     const [configFiles, dataFiles] = await Promise.all([
       scanDirectory(configPath, 'config'),
@@ -117,11 +118,11 @@ router.get('/files', async (req: Request, res: Response) => {
 router.get('/files/download/*', async (req: Request, res: Response) => {
   try {
     const filePath = req.params[0]; // Get everything after /download/
-    const fullPath = path.join(process.cwd(), 'src', filePath);
+    const fullPath = path.join(__dirname, '..', filePath);
     
-    // Security check - ensure path is within src directory
-    const srcPath = path.join(process.cwd(), 'src');
-    if (!fullPath.startsWith(srcPath)) {
+    // Security check - ensure path is within the app directory
+    const appPath = path.join(__dirname, '..');
+    if (!fullPath.startsWith(appPath)) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'
@@ -183,11 +184,11 @@ router.post('/files/upload', upload.array('files'), async (req: Request, res: Re
           }
         }
         
-        const fullTargetPath = path.join(process.cwd(), 'src', finalPath, file.originalname);
+        const fullTargetPath = path.join(__dirname, '..', finalPath, file.originalname);
         
         // Security check
-        const srcPath = path.join(process.cwd(), 'src');
-        if (!fullTargetPath.startsWith(srcPath)) {
+        const appPath = path.join(__dirname, '..');
+        if (!fullTargetPath.startsWith(appPath)) {
           results.push({
             filename: file.originalname,
             success: false,
@@ -262,12 +263,12 @@ router.post('/files/upload', upload.array('files'), async (req: Request, res: Re
 router.delete('/files/*', async (req: Request, res: Response) => {
   try {
     const filePath = req.params[0];
-    const fullPath = path.join(process.cwd(), 'src', filePath);
+    const fullPath = path.join(__dirname, '..', filePath);
     const backupBeforeDelete = req.query.backup !== 'false';
     
     // Security check
-    const srcPath = path.join(process.cwd(), 'src');
-    if (!fullPath.startsWith(srcPath)) {
+    const appPath = path.join(__dirname, '..');
+    if (!fullPath.startsWith(appPath)) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'

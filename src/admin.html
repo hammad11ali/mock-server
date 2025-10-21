@@ -95,7 +95,7 @@
 
         .path-input {
             flex: 1;
-            min-width: 200px;
+            /* min-width: 200px; */
             padding: 8px 12px;
             border: 1px solid #e2e8f0;
             border-radius: 6px;
@@ -342,12 +342,15 @@
 
         .folder, .file {
             display: flex;
-            align-items: center;
-            padding: 12px 16px;
+            align-items: flex-start;
+            padding: 0px 16px 12px 16px;
             border-radius: 8px;
             transition: all 0.2s;
             margin: 4px 0;
             border: 1px solid transparent;
+            min-height: 60px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .folder:hover, .file:hover {
@@ -374,13 +377,17 @@
             flex: 1;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            min-width: 0; /* Allow text to wrap/truncate */
+            align-items: flex-start;
+            /* min-width: 0; Allow text to wrap/truncate */
+            padding-top: 8px;
         }
 
         .file-details {
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
         }
 
         .file-name {
@@ -389,6 +396,8 @@
             font-size: 0.95rem;
             margin-bottom: 2px;
             word-break: break-word;
+            min-width: 120px;
+            display: inline-block;
         }
 
         .file-meta {
@@ -414,8 +423,9 @@
 
         .nested {
             margin-left: 32px;
-            border-left: 2px solid #edf2f7;
             padding-left: 8px;
+            display: block;
+            width: 100%;
         }
 
         .message {
@@ -642,19 +652,44 @@
         }
 
         async function loadFiles() {
+            console.log('loadFiles() called');
+            const treeContainer = document.getElementById('file-tree');
+            
             try {
+                console.log('Fetching /admin/files...');
+                // Show loading message in file tree
+                treeContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #718096;">Fetching files...</div>';
+                
                 const response = await fetch('/admin/files');
+                console.log('Response received:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Data parsed:', data);
                 
                 if (data.success) {
                     currentFiles = data.structure;
-                    renderFileTree(data.structure);
-                    document.getElementById('last-refresh').textContent = 
-                        new Date(data.lastRefresh).toLocaleString();
+                    console.log('Calling renderFileTree with:', data.structure);
+                    try {
+                        renderFileTree(data.structure);
+                        document.getElementById('last-refresh').textContent = 
+                            new Date(data.lastRefresh).toLocaleString();
+                        console.log('Files loaded successfully');
+                    } catch (renderError) {
+                        console.error('Error in renderFileTree:', renderError);
+                        const treeContainer = document.getElementById('file-tree');
+                        treeContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: red;">Error rendering file tree: ' + renderError.message + '</div>';
+                    }
                 } else {
                     showMessage('Failed to load files: ' + data.error, 'error');
+                    const treeContainer = document.getElementById('file-tree');
+                    treeContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: red;">Failed to load files: ' + data.error + '</div>';
                 }
             } catch (error) {
+                console.error('Error in loadFiles:', error);
                 showMessage('Error loading files: ' + error.message, 'error');
             }
         }
@@ -677,12 +712,15 @@
         }
 
         function renderFileTree(structure) {
+            console.log('renderFileTree() called with:', structure);
             const treeContainer = document.getElementById('file-tree');
+            console.log('Tree container found:', treeContainer);
             treeContainer.innerHTML = '';
 
             // Render config files
             if (structure.config && structure.config.length > 0) {
-                const configSection = createFolderElement('📁 Configuration Files', structure.config.length);
+                console.log('Rendering config files:', structure.config.length);
+                const configSection = createFolderElement('config', structure.config.length);
                 treeContainer.appendChild(configSection);
                 
                 const configContainer = document.createElement('div');
@@ -695,7 +733,7 @@
 
             // Render data files
             if (structure.data && structure.data.length > 0) {
-                const dataSection = createFolderElement('📁 Data Files', structure.data.length);
+                const dataSection = createFolderElement('data', structure.data.length);
                 treeContainer.appendChild(dataSection);
                 
                 const dataContainer = document.createElement('div');
@@ -1028,7 +1066,7 @@
             }
         }
 
-        async function loadFiles() {
+        async function uploadFiles() {
             const fileInput = document.getElementById('file-input');
             const files = fileInput.files;
             
