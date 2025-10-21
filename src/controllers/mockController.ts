@@ -48,7 +48,12 @@ export class DynamicMockController {
         method: config.method,
         path: config.path,
         conditionsCount: config.conditions?.length || 0
-      }))
+      })),
+      documentation: {
+        readme: "Visit /docs for comprehensive documentation",
+        admin: "Visit /admin for configuration management",
+        quickReference: "Visit /docs/quick for quick reference guide"
+      }
     });
   }
 }

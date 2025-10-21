@@ -1,4 +1,5 @@
 import express from 'express';
+import { DocsController } from './controllers/docsController';
 import { DynamicMockController } from './controllers/mockController';
 import adminRouter from './routes/adminRouter';
 
@@ -8,8 +9,9 @@ const PORT = process.env.PORT || 3000;
 // Built-in Express JSON middleware
 app.use(express.json());
 
-// Initialize dynamic mock controller
+// Initialize controllers
 const dynamicMockController = new DynamicMockController();
+const docsController = new DocsController();
 
 async function startServer() {
     try {
@@ -18,6 +20,12 @@ async function startServer() {
 
         // Health check endpoint
         app.get('/', dynamicMockController.healthCheck.bind(dynamicMockController));
+
+        // Documentation routes
+        app.get('/docs', docsController.getDocsIndex.bind(docsController));
+        app.get('/docs/readme', docsController.getReadme.bind(docsController));
+        app.get('/docs/quick', docsController.getQuickReference.bind(docsController));
+        app.get('/docs/guide', docsController.getMockGuide.bind(docsController));
 
         // Admin interface routes
         app.use('/admin', adminRouter);
@@ -59,7 +67,13 @@ async function startServer() {
             console.log('   POST /api/users - Create new user');
             console.log('   GET  /api/products - List all products');
             console.log('');
-            console.log('🔧 Admin endpoints:');
+            console.log('� Documentation endpoints:');
+            console.log('   GET  /docs - Documentation index');
+            console.log('   GET  /docs/readme - Full README');
+            console.log('   GET  /docs/quick - Quick reference');
+            console.log('   GET  /docs/guide - Mock creation guide');
+            console.log('');
+            console.log('�🔧 Admin endpoints:');
             console.log('   GET  /admin/files - List all configuration files');
             console.log('   POST /admin/files/upload - Upload new configuration files');
             console.log('   GET  /admin/files/download/* - Download specific file');
