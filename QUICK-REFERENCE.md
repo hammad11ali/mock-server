@@ -14,16 +14,16 @@ npm run build    # Build TypeScript to JavaScript
 # Health check
 curl http://localhost:3000/
 
-# Get all users
-curl http://localhost:3000/api/users
+# Get all users (normal response)
+curl "http://localhost:3000/api/users?status=active"
 
-# Get user by ID
+# Get user by ID with template variables
 curl http://localhost:3000/api/users/123
 
-# Create user
+# Create user with validation
 curl -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
-  -d '{"name":"John","email":"john@test.com"}'
+  -d '{"name":"John","email":"john@test.com","role":"premium"}'
 ```
 
 ### **Multiple Conditions Tests**
@@ -31,15 +31,58 @@ curl -X POST http://localhost:3000/api/users \
 # Implicit AND: status=active AND limit exists
 curl "http://localhost:3000/api/users?status=active&limit=2"
 
-# OR logic: premium users OR admin role
+# OR logic: premium users OR VIP role
 curl "http://localhost:3000/api/users?status=premium"
-curl "http://localhost:3000/api/users?role=admin"
+curl "http://localhost:3000/api/users?role=vip"
 
 # Complex conditions: non-inactive users with role
 curl "http://localhost:3000/api/users?status=active&role=user"
 
 # PowerShell alternative (Windows)
 Invoke-RestMethod "http://localhost:3000/api/users?status=active&limit=2"
+```
+
+### **Error & Validation Tests**
+```bash
+# 400 - Missing required field (email)
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John"}'
+
+# 404 - User not found
+curl http://localhost:3000/api/users/999
+
+# 409 - Duplicate email conflict
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Admin","email":"admin@example.com"}'
+```
+
+### **Performance & Timing Tests**
+```bash
+# Request timeout (408 after 5 seconds)
+curl "http://localhost:3000/api/users?test=timeout"
+
+# Latency simulation (200ms delay)
+curl "http://localhost:3000/api/users?status=active&limit=10"
+
+# Slow response (300ms delay)
+curl "http://localhost:3000/api/users?status=active"
+```
+
+### **Connection Failure Tests**
+```bash
+# Connection reset (ECONNRESET)
+curl "http://localhost:3000/api/users?simulate=connection_reset"
+# Expected: Connection closed unexpectedly
+
+# Silent timeout (server never responds)
+curl --max-time 5 "http://localhost:3000/api/users?simulate=silent_timeout"
+# Expected: Operation timed out
+
+# PowerShell connection tests
+Invoke-RestMethod "http://localhost:3000/api/users?simulate=connection_reset"
+# Expected: WebException - Connection closed
 ```
 
 ## 🎯 Configuration Quick Start
@@ -252,21 +295,46 @@ File: `src/data/users.json`
 ### **Timeout**
 ```json
 {
-  "timeout": 5000
+  "timeout": true           // Boolean flag (defaults to 5s)
+}
+```
+
+```json
+{
+  "timeout": 3000          // Custom timeout in milliseconds
+}
+```
+
+### **Connection Failures**
+```json
+{
+  "connectionFailure": {
+    "type": "reset",       // Connection reset (ECONNRESET)
+    "delay": 500          // Optional delay before failure
+  }
+}
+```
+
+```json
+{
+  "connectionFailure": {
+    "type": "silent"       // Server accepts but never responds
+  }
 }
 ```
 
 ## 🎭 Common HTTP Status Codes
 
-| Code | Meaning | Use Case |
-|------|---------|----------|
-| `200` | OK | Successful GET |
-| `201` | Created | Successful POST |
-| `400` | Bad Request | Validation error |
-| `401` | Unauthorized | Auth required |
-| `404` | Not Found | Resource not found |
-| `409` | Conflict | Duplicate resource |
-| `500` | Server Error | Internal error |
+| Code | Meaning | Use Case | Test Endpoint |
+|------|---------|----------|---------------|
+| `200` | OK | Successful GET | `GET /api/users?status=active` |
+| `201` | Created | Successful POST | `POST /api/users` (valid data) |
+| `400` | Bad Request | Validation error | `POST /api/users` (no email) |
+| `401` | Unauthorized | Auth required | Custom header conditions |
+| `404` | Not Found | Resource not found | `GET /api/users/999` |
+| `408` | Request Timeout | Server timeout | `GET /api/users?test=timeout` |
+| `409` | Conflict | Duplicate resource | `POST /api/users` (admin email) |
+| `500` | Server Error | Internal error | Custom error conditions |
 
 ## 📂 File Naming Convention
 
@@ -277,6 +345,57 @@ File: `src/data/users.json`
 | POST | `/api/users` | `post-users.json` |
 | PUT | `/api/users/:id` | `put-user-by-id.json` |
 | DELETE | `/api/users/:id` | `delete-user-by-id.json` |
+
+## 🧪 Testing Quick Reference
+
+### **Complete Test Matrix**
+
+| **Test Type** | **Endpoint** | **Expected Result** | **Use Case** |
+|--------------|-------------|-------------------|-------------|
+| **Normal Response** | `GET /api/users?status=active` | 200 + user data | Standard API response |
+| **Template Variables** | `GET /api/users/123` | Dynamic data with ID | Parameter injection |
+| **Validation Error** | `POST /api/users` (no email) | 400 Bad Request | Input validation |
+| **Resource Not Found** | `GET /api/users/999` | 404 Not Found | Missing resource |
+| **Duplicate Resource** | `POST /api/users` (admin email) | 409 Conflict | Duplicate handling |
+| **Server Timeout** | `GET /api/users?test=timeout` | 408 after 5s | Server timeout |
+| **Connection Reset** | `GET /api/users?simulate=connection_reset` | Connection error | Network failure |
+| **Silent Timeout** | `GET /api/users?simulate=silent_timeout` | Client timeout | Unresponsive server |
+| **Latency Test** | `GET /api/users?status=active` | 300ms delay | Network latency |
+| **Complex Logic** | `GET /api/users?status=premium` | OR condition match | Logical operators |
+
+### **One-Liner Test Commands**
+
+```bash
+# Test all scenarios quickly
+curl "http://localhost:3000/api/users?status=active"                    # 200 OK
+curl "http://localhost:3000/api/users/123"                              # Template variables
+curl -X POST "http://localhost:3000/api/users" -d '{"name":"John"}'     # 400 validation error
+curl "http://localhost:3000/api/users/999"                              # 404 not found
+curl "http://localhost:3000/api/users?test=timeout"                     # 408 timeout
+curl "http://localhost:3000/api/users?simulate=connection_reset"        # Connection reset
+curl --max-time 3 "http://localhost:3000/api/users?simulate=silent_timeout" # Silent timeout
+```
+
+### **PowerShell Test Commands**
+
+```powershell
+# Windows testing alternatives
+Invoke-RestMethod "http://localhost:3000/api/users?status=active"
+Invoke-RestMethod "http://localhost:3000/api/users/123"
+Invoke-RestMethod "http://localhost:3000/api/users?simulate=connection_reset"  # Expect error
+```
+
+### **Admin Interface Tests**
+
+```bash
+# Access web interface
+open http://localhost:3000/admin
+
+# API endpoints
+curl "http://localhost:3000/admin/files"                                # List files
+curl "http://localhost:3000/admin/routes"                               # List routes
+curl "http://localhost:3000/admin/status"                               # Server status
+```
 
 ## 🔧 Troubleshooting
 
@@ -301,6 +420,12 @@ File: `src/data/users.json`
 - Verify nested conditions are valid
 - Test individual conditions before combining
 
+### **Timeout/Connection Issues**
+- For boolean timeout: Use `"timeout": true` (defaults to 5s)
+- For connection reset: Expect connection error, not HTTP response
+- For silent timeout: Client will timeout based on their settings
+- Check server logs for timeout/connection failure messages
+
 ### **Performance Issues**
 - Use implicit AND when possible (faster than `$and`)
 - Avoid deeply nested logical structures
@@ -313,3 +438,6 @@ File: `src/data/users.json`
 - Test each condition individually before combining
 - Use implicit AND (`{"a": "1", "b": "2"}`) for better performance than explicit `$and`
 - Place most specific conditions first for better matching
+- Use boolean timeout (`true`) for quick testing, numeric for specific timing
+- Test connection failures with different clients to see various error messages
+- Check server logs to understand which conditions are being matched

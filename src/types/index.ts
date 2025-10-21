@@ -21,7 +21,8 @@ export interface RouteResponse {
     statusCode: number;
     body: ResponseBody;
     latency?: LatencyConfig;
-    timeout?: number;
+    timeout?: number | boolean;
+    connectionFailure?: ConnectionFailureConfig;
 }
 
 export interface ResponseBody {
@@ -38,6 +39,11 @@ export interface LatencyConfig {
     delay?: number;
     min?: number;
     max?: number;
+}
+
+export interface ConnectionFailureConfig {
+    type: 'reset' | 'silent';
+    delay?: number;
 }
 
 export interface RouteConfig {

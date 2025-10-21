@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { RequestMatchResult, ResponseBody, RouteResponse } from '../types';
+import { ConnectionFailureConfig, RequestMatchResult, ResponseBody, RouteResponse } from '../types';
 import { ConfigLoader } from '../utils/configLoader';
 import { TemplateEngine } from '../utils/templateEngine';
 
@@ -21,6 +21,26 @@ export class ResponseProcessor {
         
         if (!matchResult) {
           return next();
+        }
+
+        // Handle connection failures first
+        if (matchResult.matchedResponse.connectionFailure) {
+          await this.handleConnectionFailure(req, res, matchResult.matchedResponse.connectionFailure);
+          return; // Don't process normal response
+        }
+
+        // Apply timeout if configured - when timeout is true, just wait for timeout
+        if (matchResult.matchedResponse.timeout === true) {
+          const timeoutValue = 5000; // Default 5 seconds when timeout is true
+          console.log(`⏰ Request configured to timeout in ${timeoutValue}ms - not processing response`);
+          ResponseProcessor.applyTimeout(req, res, timeoutValue);
+          return; // Don't process the response, just wait for timeout
+        }
+
+        // Apply numeric timeout if configured
+        if (typeof matchResult.matchedResponse.timeout === 'number') {
+          ResponseProcessor.applyTimeout(req, res, matchResult.matchedResponse.timeout);
+          return; // Don't process the response, just wait for timeout
         }
 
         // Apply latency if configured
@@ -168,13 +188,45 @@ export class ResponseProcessor {
     });
   }
 
+  // Handle connection failures
+  private async handleConnectionFailure(req: Request, res: Response, config: ConnectionFailureConfig): Promise<void> {
+    const delay = config.delay || 0;
+    
+    if (delay > 0) {
+      console.log(`⏳ Waiting ${delay}ms before simulating ${config.type} connection failure`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    switch (config.type) {
+      case 'reset':
+        console.log(`🔌 Simulating connection reset (ECONNRESET)`);
+        // Destroy the socket connection immediately
+        req.socket.destroy();
+        break;
+        
+      case 'silent':
+        console.log(`🤫 Simulating silent timeout - server will not respond`);
+        // Do nothing - just let the request hang
+        // Client will eventually timeout based on their own timeout settings
+        break;
+        
+      default:
+        console.error(`❌ Unknown connection failure type: ${config.type}`);
+        res.status(500).json({ error: 'Invalid connection failure configuration' });
+    }
+  }
+
   // Static method to handle timeout
   static applyTimeout(req: Request, res: Response, timeout: number): void {
+    console.log(`⏰ Setting timeout for ${timeout}ms`);
     const timer = setTimeout(() => {
       if (!res.headersSent) {
+        console.log(`⚠️ Request timed out after ${timeout}ms`);
         res.status(408).json({
           error: 'Request timeout',
-          message: `Request timed out after ${timeout}ms`
+          message: `Request timed out after ${timeout}ms`,
+          path: req.path,
+          query: req.query
         });
       }
     }, timeout);

@@ -98,6 +98,52 @@
           }
         }
       }
+    },
+    {
+      "when": {
+        "query.test": "timeout"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "dataFile": "users.json",
+          "dynamicFields": {
+            "message": "Testing timeout behavior - this request will timeout",
+            "testType": "timeout",
+            "timestamp": "{{currentTimestamp}}"
+          }
+        },
+        "timeout": true
+      }
+    },
+    {
+      "when": {
+        "query.simulate": "connection_reset"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "message": "This will never be sent - connection will be reset"
+        },
+        "connectionFailure": {
+          "type": "reset",
+          "delay": 500
+        }
+      }
+    },
+    {
+      "when": {
+        "query.simulate": "silent_timeout"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "message": "This will never be sent - server will remain silent"
+        },
+        "connectionFailure": {
+          "type": "silent"
+        }
+      }
     }
   ],
   "defaultResponse": {

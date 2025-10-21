@@ -324,9 +324,45 @@ Create a JSON file in `src/config/routes/{resource}/{method}-{endpoint}.json`:
 ```json
 {
   "response": {
-    "statusCode": 408,
-    "body": { "error": "Request timeout" },
-    "timeout": 5000           // 5 second timeout
+    "statusCode": 200,
+    "body": { "message": "This will timeout" },
+    "timeout": true           // Boolean flag - defaults to 5s
+  }
+}
+```
+
+```json
+{
+  "response": {
+    "statusCode": 200,
+    "body": { "message": "Custom timeout" },
+    "timeout": 3000           // Numeric timeout in milliseconds
+  }
+}
+```
+
+#### **Connection Failure Simulation**
+```json
+{
+  "response": {
+    "statusCode": 200,
+    "body": { "message": "Connection will be reset" },
+    "connectionFailure": {
+      "type": "reset",        // "reset" or "silent"
+      "delay": 500           // Optional delay before failure
+    }
+  }
+}
+```
+
+```json
+{
+  "response": {
+    "statusCode": 200,
+    "body": { "message": "Server will not respond" },
+    "connectionFailure": {
+      "type": "silent"       // Server accepts but never responds
+    }
   }
 }
 ```
@@ -636,28 +672,405 @@ Configure server defaults in `src/config/global.json`:
 }
 ```
 
-## 🧪 Testing Your Mocks
+## 🧪 Comprehensive Testing Guide
 
-### **Available Endpoints**
-- `GET /` - Health check and configuration info
-- `GET /api/users` - List users (with filtering)
-- `GET /api/users/:id` - Get user by ID (with template variables)
-- `POST /api/users` - Create user (with validation)
-- `GET /api/products` - List products (with categories)
+This mock server provides extensive testing capabilities to simulate real-world API scenarios, including network failures, timeouts, latency, and various response conditions.
 
-### **Test with curl**
+### **🎯 Available Test Endpoints**
+
+#### **Users API (`/api/users`)**
+- `GET /api/users` - List all users
+- `GET /api/users/:id` - Get user by ID  
+- `POST /api/users` - Create new user
+
+#### **Products API (`/api/products`)**
+- `GET /api/products` - List all products
+
+#### **Admin Interface (`/admin`)**
+- `GET /admin` - Web-based file management interface
+- `GET /admin/files` - List configuration files
+- `POST /admin/files/upload` - Upload configuration files
+- `GET /admin/routes` - View all configured routes
+
+---
+
+## 🌊 **Response Flow Testing**
+
+### **1. Normal Responses**
+Test standard API responses with various conditions:
+
 ```bash
-# Get user by ID
+# Basic user listing
+curl "http://localhost:3000/api/users?status=active"
+
+# Get specific user
 curl "http://localhost:3000/api/users/123"
 
-# Create user
+# Create user with validation
 curl -X POST "http://localhost:3000/api/users" \
   -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","email":"john@example.com"}'
+  -d '{"name":"John Doe","email":"john@example.com","role":"premium"}'
 
-# Filter products
+# Filter products by category
 curl "http://localhost:3000/api/products?category=electronics"
+
+# Featured products
+curl "http://localhost:3000/api/products?featured=true"
 ```
+
+### **2. Conditional Logic Testing**
+
+#### **Implicit AND Conditions**
+```bash
+# All conditions must match
+curl "http://localhost:3000/api/users?status=active&limit=5"
+# Returns: Active users with pagination
+```
+
+#### **Explicit OR Logic**
+```bash
+# Any condition matches
+curl "http://localhost:3000/api/users?status=premium"
+curl "http://localhost:3000/api/users?role=vip"
+# Returns: Premium users OR VIP users
+```
+
+#### **Complex Nested Logic**
+```bash
+# AND + OR + NOT combinations
+curl "http://localhost:3000/api/users?status=active&role=admin"
+# Returns: Active users who are NOT guests with roles
+```
+
+### **3. Validation & Error Testing**
+
+#### **Missing Required Fields**
+```bash
+# Missing email - returns 400
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe"}'
+```
+
+#### **Duplicate Resources**
+```bash
+# Duplicate email - returns 409
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Admin","email":"admin@example.com"}'
+```
+
+#### **Resource Not Found**
+```bash
+# Non-existent user - returns 404
+curl "http://localhost:3000/api/users/999"
+```
+
+---
+
+## ⏱️ **Performance & Timing Testing**
+
+### **1. Latency Simulation**
+Test API performance under various network conditions:
+
+```bash
+# Fast response (200ms delay)
+curl "http://localhost:3000/api/users?status=active&limit=10"
+
+# Slow response (300ms delay)  
+curl "http://localhost:3000/api/users?status=active"
+
+# Variable latency (different delays per request)
+curl "http://localhost:3000/api/products"
+```
+
+### **2. Timeout Testing**
+
+#### **Server-Side Timeout (408 Response)**
+```bash
+# Request configured to timeout after 5 seconds
+curl "http://localhost:3000/api/users?test=timeout"
+# Returns: 408 Request Timeout after 5s
+```
+
+#### **Default Response Timeout**
+```bash
+# Default endpoint timeout (3 seconds)
+curl "http://localhost:3000/api/users"
+# Returns: 408 Request Timeout after 3s
+```
+
+---
+
+## 🔌 **Connection Failure Testing**
+
+### **1. Connection Reset (ECONNRESET)**
+Simulate server crashes or network interruptions:
+
+```bash
+# Connection reset after 500ms
+curl "http://localhost:3000/api/users?simulate=connection_reset"
+# Result: "Connection was closed unexpectedly"
+```
+
+**PowerShell equivalent:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/api/users?simulate=connection_reset"
+# Result: WebException - Connection closed unexpectedly
+```
+
+### **2. Silent Timeout (No Response)**
+Simulate unresponsive servers:
+
+```bash
+# Server accepts connection but never responds
+curl --max-time 10 "http://localhost:3000/api/users?simulate=silent_timeout"
+# Result: "Operation timed out after 10000 milliseconds"
+```
+
+**PowerShell with timeout:**
+```powershell
+try {
+    Invoke-RestMethod -Uri "http://localhost:3000/api/users?simulate=silent_timeout" -TimeoutSec 5
+} catch {
+    Write-Host "Timeout: $($_.Exception.Message)"
+}
+```
+
+---
+
+## 🎭 **Status Code Testing**
+
+Test various HTTP status codes and their scenarios:
+
+```bash
+# 200 - Success responses
+curl "http://localhost:3000/api/users?status=active"
+
+# 201 - Created (new user)
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Jane","email":"jane@example.com"}'
+
+# 400 - Bad Request (missing email)
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John"}'
+
+# 404 - Not Found (non-existent user)
+curl "http://localhost:3000/api/users/999"
+
+# 408 - Request Timeout
+curl "http://localhost:3000/api/users?test=timeout"
+
+# 409 - Conflict (duplicate email)
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Admin","email":"admin@example.com"}'
+```
+
+---
+
+## 🧩 **Template Variable Testing**
+
+Test dynamic data generation and request variable insertion:
+
+### **System Variables**
+```bash
+# Generate dynamic IDs and timestamps
+curl "http://localhost:3000/api/users/456"
+# Response includes: generateId, currentTimestamp, etc.
+```
+
+### **Request Parameters**
+```bash
+# Path parameters
+curl "http://localhost:3000/api/users/123"
+# Response: {"id": "123", "name": "User 123", ...}
+
+# Query parameters  
+curl "http://localhost:3000/api/users?limit=5&status=active"
+# Response includes: limit=5, appliedFilters with status
+```
+
+### **Request Body Variables**
+```bash
+# Body data in response
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"TestUser","email":"test@example.com","role":"premium"}'
+# Response echoes: name, email, role from request
+```
+
+---
+
+## 📊 **Data Filtering & Pagination Testing**
+
+### **Filtering**
+```bash
+# Filter by status
+curl "http://localhost:3000/api/users?status=active"
+
+# Complex filtering (implicit AND)
+curl "http://localhost:3000/api/users?status=active&limit=3"
+```
+
+### **Pagination**
+```bash
+# Limit results
+curl "http://localhost:3000/api/users?limit=2"
+
+# Pagination with status filter
+curl "http://localhost:3000/api/users?status=active&limit=5"
+```
+
+---
+
+## 🎪 **Complete Test Suite Examples**
+
+### **User Management Testing**
+```bash
+#!/bin/bash
+echo "=== User Management Test Suite ==="
+
+echo "1. Create new user..."
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test User","email":"test@example.com"}'
+
+echo -e "\n2. Get specific user..."
+curl "http://localhost:3000/api/users/123"
+
+echo -e "\n3. List active users..."
+curl "http://localhost:3000/api/users?status=active"
+
+echo -e "\n4. Test validation error..."
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"No Email User"}'
+
+echo -e "\n5. Test timeout..."
+curl --max-time 6 "http://localhost:3000/api/users?test=timeout"
+```
+
+### **Connection Failure Testing**
+```bash
+#!/bin/bash
+echo "=== Connection Failure Test Suite ==="
+
+echo "1. Normal request..."
+curl "http://localhost:3000/api/users?status=active"
+
+echo -e "\n2. Connection reset test..."
+curl "http://localhost:3000/api/users?simulate=connection_reset" || echo "Expected: Connection reset"
+
+echo -e "\n3. Silent timeout test..."
+curl --max-time 3 "http://localhost:3000/api/users?simulate=silent_timeout" || echo "Expected: Timeout"
+
+echo -e "\n4. Server timeout test..."
+curl --max-time 6 "http://localhost:3000/api/users?test=timeout" || echo "Expected: 408 timeout response"
+```
+
+### **Performance Testing**
+```bash
+#!/bin/bash
+echo "=== Performance Test Suite ==="
+
+echo "1. Fast response (200ms latency)..."
+time curl "http://localhost:3000/api/users?status=active&limit=10"
+
+echo -e "\n2. Slow response (300ms latency)..."
+time curl "http://localhost:3000/api/users?status=active"
+
+echo -e "\n3. Variable latency..."
+for i in {1..3}; do
+  echo "Request $i:"
+  time curl "http://localhost:3000/api/products"
+done
+```
+
+---
+
+## 🔧 **Admin Interface Testing**
+
+### **Web Interface**
+Visit `http://localhost:3000/admin` to access the web-based admin interface:
+
+- **File Browser**: View, upload, download, delete configuration files
+- **Routes Overview**: See all configured routes and their conditions
+- **Real-time Updates**: Modify configurations without server restart
+
+### **Admin API Testing**
+```bash
+# List all configuration files
+curl "http://localhost:3000/admin/files"
+
+# Get server status
+curl "http://localhost:3000/admin/status"
+
+# List all routes
+curl "http://localhost:3000/admin/routes"
+
+# Download specific configuration
+curl -O "http://localhost:3000/admin/files/download/config/routes/users/get-users.json"
+```
+
+---
+
+## 🎯 **Testing Quick Reference**
+
+| **Test Type** | **Endpoint** | **Expected Result** |
+|--------------|-------------|-------------------|
+| **Normal Response** | `GET /api/users?status=active` | 200 with user data |
+| **Validation Error** | `POST /api/users` (no email) | 400 Bad Request |
+| **Not Found** | `GET /api/users/999` | 404 Not Found |
+| **Duplicate Resource** | `POST /api/users` (admin email) | 409 Conflict |
+| **Server Timeout** | `GET /api/users?test=timeout` | 408 after 5s |
+| **Connection Reset** | `GET /api/users?simulate=connection_reset` | Connection error |
+| **Silent Timeout** | `GET /api/users?simulate=silent_timeout` | Client timeout |
+| **Latency Test** | `GET /api/users?status=active` | 300ms delay |
+| **Template Variables** | `GET /api/users/123` | Dynamic data with ID |
+| **Complex Logic** | `GET /api/users?status=premium` | OR condition match |
+
+---
+
+## 🚀 **Production Testing Tips**
+
+1. **Use different HTTP clients** to test various error handling:
+   - `curl` - Command line testing
+   - `Postman` - GUI testing with collections
+   - `fetch()` - JavaScript client testing
+   - `axios` - Node.js/React testing
+
+2. **Test client timeout handling**:
+   ```javascript
+   // JavaScript example
+   fetch('/api/users?simulate=silent_timeout', { 
+     signal: AbortSignal.timeout(3000) 
+   })
+   .catch(err => console.log('Client timeout:', err));
+   ```
+
+3. **Test retry logic** with connection reset:
+   ```bash
+   # Test exponential backoff
+   for i in {1..3}; do
+     echo "Attempt $i"
+     curl "http://localhost:3000/api/users?simulate=connection_reset"
+     sleep $((i * 2))
+   done
+   ```
+
+4. **Load testing** with concurrent requests:
+   ```bash
+   # Test concurrent requests
+   for i in {1..10}; do
+     curl "http://localhost:3000/api/users?status=active" &
+   done
+   wait
+   ```
+
+**🎉 Ready to test every possible scenario your API clients might encounter!**
 
 ## 🚀 Deployment
 
