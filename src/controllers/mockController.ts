@@ -13,7 +13,8 @@ export class DynamicMockController {
     const configDir = path.join(__dirname, '..', 'config');
     const dataDir = path.join(__dirname, '..', 'data');
     
-    this.configLoader = new ConfigLoader(configDir, dataDir);
+    // Use the singleton instance to ensure admin routes can access it
+    this.configLoader = ConfigLoader.getInstance(configDir, dataDir);
     this.requestMatcher = new RequestMatcher(this.configLoader);
     this.responseProcessor = new ResponseProcessor(this.configLoader, dataDir);
   }

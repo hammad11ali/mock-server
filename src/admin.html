@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Server File Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #1a365d;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-top: 16px;
+            padding: 12px;
+            background: #edf2f7;
+            border-radius: 8px;
+        }
+
+        .status-item {
+            font-size: 0.9rem;
+        }
+
+        .status-item strong {
+            color: #2d3748;
+        }
+
+        .actions {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .actions h2 {
+            margin-bottom: 20px;
+            color: #1a365d;
+            font-size: 1.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .upload-controls {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .path-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+        }
+
+        .btn-secondary {
+            background: #edf2f7;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .file-browser {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .file-browser h2 {
+            margin-bottom: 20px;
+            color: #1a365d;
+            font-size: 1.5rem;
+        }
+
+        .file-tree {
+            margin-top: 16px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .routes-overview {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .routes-overview h2 {
+            margin-bottom: 20px;
+            color: #1a365d;
+            font-size: 1.5rem;
+        }
+
+        .routes-list {
+            margin-top: 16px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .route-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .route-item:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .route-header {
+            background: #f7fafc;
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .route-method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+            margin-right: 12px;
+        }
+
+        .route-method.GET { background: #c6f6d5; color: #22543d; }
+        .route-method.POST { background: #bee3f8; color: #2a4365; }
+        .route-method.PUT { background: #fbb6ce; color: #702459; }
+        .route-method.DELETE { background: #fed7d7; color: #742a2a; }
+        .route-method.PATCH { background: #faf089; color: #744210; }
+
+        .route-path {
+            font-weight: 500;
+            color: #2d3748;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+
+        .route-meta {
+            font-size: 0.8rem;
+            color: #718096;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .route-details {
+            padding: 16px;
+            background: #fafafa;
+            display: none;
+        }
+
+        .route-details.expanded {
+            display: block;
+        }
+
+        .route-section {
+            margin-bottom: 16px;
+        }
+
+        .route-section h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .condition-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .condition-when {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+            background: #edf2f7;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+        }
+
+        .condition-response {
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+
+        .expand-icon {
+            transition: transform 0.2s;
+            font-size: 0.8rem;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .route-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .test-route-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .test-route-btn:hover {
+            background: #38a169;
+        }
+
+        .route-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        .folder, .file {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin: 4px 0;
+            border: 1px solid transparent;
+        }
+
+        .folder:hover, .file:hover {
+            background: #f7fafc;
+            border-color: #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .folder-icon, .file-icon {
+            margin-right: 12px;
+            font-size: 1.2rem;
+            min-width: 20px;
+        }
+
+        .folder-icon {
+            color: #4299e1;
+        }
+
+        .file-icon {
+            color: #48bb78;
+        }
+
+        .file-info {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 0; /* Allow text to wrap/truncate */
+        }
+
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #2d3748;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
+
+        .file-meta {
+            font-size: 0.8rem;
+            color: #718096;
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .folder:hover .file-actions,
+        .file:hover .file-actions {
+            opacity: 1;
+        }
+
+        .nested {
+            margin-left: 32px;
+            border-left: 2px solid #edf2f7;
+            padding-left: 8px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            border-left: 4px solid;
+        }
+
+        .message.success {
+            background: #f0fff4;
+            border-color: #48bb78;
+            color: #22543d;
+        }
+
+        .message.error {
+            background: #fed7d7;
+            border-color: #f56565;
+            color: #742a2a;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #4299e1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .checkbox {
+            margin-right: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-content {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            overflow: auto;
+            max-height: 400px;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗂️ Mock Server File Manager</h1>
+            <p>Manage configuration files and data for your dynamic mock server</p>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <strong>Status:</strong> <span id="server-status">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <strong>Configs:</strong> <span id="config-count">-</span>
+                </div>
+                <div class="status-item">
+                    <strong>Data Files:</strong> <span id="data-count">-</span>
+                </div>
+                <div class="status-item">
+                    <strong>Last Refresh:</strong> <span id="last-refresh">-</span>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="refreshServer()">
+                    <span id="refresh-btn-text">🔄 Refresh Server</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="actions">
+            <h2>📤 Upload Files</h2>
+            <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+                <div>
+                    <div style="font-size: 2rem; margin-bottom: 8px;">📁</div>
+                    <div><strong>Drag & drop files here</strong> or click to browse</div>
+                    <div style="font-size: 0.9rem; color: #718096; margin-top: 4px;">Only JSON files are accepted</div>
+                </div>
+            </div>
+            
+            <div class="upload-controls">
+                <input type="file" id="file-input" multiple accept=".json" style="display: none;">
+                <input type="text" class="path-input" id="upload-path" placeholder="Target path (e.g., config/routes/orders/)" 
+                       title="Leave empty for auto-detection">
+                
+                <label style="font-size: 0.9rem;">
+                    <input type="checkbox" class="checkbox" id="validate-json" checked> Validate JSON
+                </label>
+                <label style="font-size: 0.9rem;">
+                    <input type="checkbox" class="checkbox" id="auto-format" checked> Auto-format
+                </label>
+                <label style="font-size: 0.9rem;">
+                    <input type="checkbox" class="checkbox" id="backup-existing" checked> Backup existing
+                </label>
+                
+                <button class="btn btn-primary" onclick="uploadFiles()">
+                    <span id="upload-btn-text">Upload Files</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="file-browser">
+            <h2>📁 File Browser</h2>
+            <div id="file-tree" class="file-tree">
+                <div style="text-align: center; padding: 40px; color: #718096;">
+                    <div class="loading"></div>
+                    <div style="margin-top: 8px;">Loading files...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="routes-overview">
+            <h2>🛣️ Available Routes</h2>
+            <div id="routes-list" class="routes-list">
+                <div style="text-align: center; padding: 40px; color: #718096;">
+                    <div class="loading"></div>
+                    <div style="margin-top: 8px;">Loading routes...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="messages"></div>
+    </div>
+
+    <!-- File Content Modal -->
+    <div id="file-modal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 id="modal-title">File Content</h3>
+                <button class="btn btn-secondary btn-small" onclick="closeModal()">✕ Close</button>
+            </div>
+            <div id="file-content" class="file-content"></div>
+            <div style="margin-top: 16px; text-align: right;">
+                <button class="btn btn-secondary btn-small" onclick="downloadCurrentFile()">💾 Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFiles = {};
+        let currentFileContent = '';
+        let currentFileName = '';
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFiles();
+            loadStatus();
+            loadRoutes();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+
+            // Drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.json'));
+                if (files.length > 0) {
+                    fileInput.files = createFileList(files);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                const files = Array.from(fileInput.files);
+                if (files.length > 0) {
+                    showMessage(`Selected ${files.length} file(s): ${files.map(f => f.name).join(', ')}`, 'success');
+                }
+            });
+        }
+
+        function createFileList(files) {
+            const dt = new DataTransfer();
+            files.forEach(file => dt.items.add(file));
+            return dt.files;
+        }
+
+        async function loadFiles() {
+            try {
+                const response = await fetch('/admin/files');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentFiles = data.structure;
+                    renderFileTree(data.structure);
+                    document.getElementById('last-refresh').textContent = 
+                        new Date(data.lastRefresh).toLocaleString();
+                } else {
+                    showMessage('Failed to load files: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error loading files: ' + error.message, 'error');
+            }
+        }
+
+        async function loadStatus() {
+            try {
+                const response = await fetch('/admin/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('server-status').textContent = '✅ Online';
+                    document.getElementById('config-count').textContent = data.status.loadedConfigs;
+                    document.getElementById('data-count').textContent = data.status.loadedDataFiles;
+                } else {
+                    document.getElementById('server-status').textContent = '❌ Error';
+                }
+            } catch (error) {
+                document.getElementById('server-status').textContent = '❌ Offline';
+            }
+        }
+
+        function renderFileTree(structure) {
+            const treeContainer = document.getElementById('file-tree');
+            treeContainer.innerHTML = '';
+
+            // Render config files
+            if (structure.config && structure.config.length > 0) {
+                const configSection = createFolderElement('📁 Configuration Files', structure.config.length);
+                treeContainer.appendChild(configSection);
+                
+                const configContainer = document.createElement('div');
+                configContainer.className = 'nested';
+                structure.config.forEach(item => {
+                    configContainer.appendChild(createFileTreeItem(item, 'config'));
+                });
+                treeContainer.appendChild(configContainer);
+            }
+
+            // Render data files
+            if (structure.data && structure.data.length > 0) {
+                const dataSection = createFolderElement('📁 Data Files', structure.data.length);
+                treeContainer.appendChild(dataSection);
+                
+                const dataContainer = document.createElement('div');
+                dataContainer.className = 'nested';
+                structure.data.forEach(item => {
+                    dataContainer.appendChild(createFileTreeItem(item, 'data'));
+                });
+                treeContainer.appendChild(dataContainer);
+            }
+
+            if ((!structure.config || structure.config.length === 0) && 
+                (!structure.data || structure.data.length === 0)) {
+                treeContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #718096;">No files found</div>';
+            }
+        }
+
+        function createFolderElement(name, count) {
+            const folder = document.createElement('div');
+            folder.className = 'folder';
+            folder.innerHTML = `
+                <span class="folder-icon">📁</span>
+                <div class="file-info">
+                    <div class="file-details">
+                        <div class="file-name">${name}</div>
+                        <div class="file-meta">${count} items</div>
+                    </div>
+                </div>
+            `;
+            return folder;
+        }
+
+        function createFileTreeItem(item, basePath) {
+            const element = document.createElement('div');
+            
+            if (item.type === 'directory') {
+                element.className = 'folder';
+                element.innerHTML = `
+                    <span class="folder-icon">📁</span>
+                    <div class="file-info">
+                        <div class="file-details">
+                            <div class="file-name">${item.name}</div>
+                            <div class="file-meta">${item.count} files</div>
+                        </div>
+                    </div>
+                `;
+                
+                if (item.children && item.children.length > 0) {
+                    const childContainer = document.createElement('div');
+                    childContainer.className = 'nested';
+                    item.children.forEach(child => {
+                        childContainer.appendChild(createFileTreeItem(child, basePath));
+                    });
+                    element.appendChild(childContainer);
+                }
+            } else {
+                element.className = 'file';
+                const fileSize = formatFileSize(item.size);
+                const modifiedDate = new Date(item.modified).toLocaleDateString();
+                
+                element.innerHTML = `
+                    <span class="file-icon">📄</span>
+                    <div class="file-info">
+                        <div class="file-details">
+                            <div class="file-name">${item.name}</div>
+                            <div class="file-meta">
+                                <span>${fileSize}</span>
+                                <span>•</span>
+                                <span>${modifiedDate}</span>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-secondary btn-small" onclick="viewFile('${item.path}')" title="View file">👁️</button>
+                            <button class="btn btn-secondary btn-small" onclick="downloadFile('${item.path}')" title="Download">⬇️</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteFile('${item.path}')" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return element;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        async function viewFile(filePath) {
+            try {
+                const response = await fetch(`/admin/files/download/${filePath}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentFileContent = data.file.content;
+                    currentFileName = filePath;
+                    document.getElementById('modal-title').textContent = `📄 ${filePath}`;
+                    document.getElementById('file-content').textContent = 
+                        JSON.stringify(JSON.parse(data.file.content), null, 2);
+                    document.getElementById('file-modal').style.display = 'block';
+                } else {
+                    showMessage('Failed to load file: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error loading file: ' + error.message, 'error');
+            }
+        }
+
+        async function downloadFile(filePath) {
+            try {
+                const response = await fetch(`/admin/files/download/${filePath}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const blob = new Blob([data.file.content], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filePath.split('/').pop();
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showMessage(`Downloaded ${filePath}`, 'success');
+                } else {
+                    showMessage('Failed to download file: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error downloading file: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteFile(filePath) {
+            if (!confirm(`Are you sure you want to delete ${filePath}?\n\nThis action cannot be undone (but a backup will be created).`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/files/${filePath}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`Deleted ${filePath}`, 'success');
+                    loadFiles(); // Refresh file list
+                    loadRoutes(); // Refresh routes list
+                } else {
+                    showMessage('Failed to delete file: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error deleting file: ' + error.message, 'error');
+            }
+        }
+
+        async function loadRoutes() {
+            try {
+                const response = await fetch('/admin/routes');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderRoutes(data.routes, data.stats);
+                } else {
+                    showMessage('Failed to load routes: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error loading routes: ' + error.message, 'error');
+            }
+        }
+
+        function renderRoutes(routes, stats) {
+            const routesContainer = document.getElementById('routes-list');
+            routesContainer.innerHTML = '';
+
+            // Add stats section
+            const statsSection = document.createElement('div');
+            statsSection.className = 'route-stats';
+            statsSection.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-number">${stats.totalRoutes}</div>
+                    <div class="stat-label">Total Routes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${stats.methodCounts.GET || 0}</div>
+                    <div class="stat-label">GET</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${stats.methodCounts.POST || 0}</div>
+                    <div class="stat-label">POST</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${stats.methodCounts.PUT || 0}</div>
+                    <div class="stat-label">PUT</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${stats.methodCounts.DELETE || 0}</div>
+                    <div class="stat-label">DELETE</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${stats.totalConditions}</div>
+                    <div class="stat-label">Conditions</div>
+                </div>
+            `;
+            routesContainer.appendChild(statsSection);
+
+            // Add routes
+            routes.forEach((route, index) => {
+                const routeElement = createRouteElement(route, index);
+                routesContainer.appendChild(routeElement);
+            });
+
+            if (routes.length === 0) {
+                routesContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #718096;">No routes found</div>';
+            }
+        }
+
+        function createRouteElement(route, index) {
+            const routeDiv = document.createElement('div');
+            routeDiv.className = 'route-item';
+            
+            routeDiv.innerHTML = `
+                <div class="route-header" onclick="toggleRouteDetails(${index})">
+                    <div style="display: flex; align-items: center;">
+                        <span class="route-method ${route.method}">${route.method}</span>
+                        <span class="route-path">${route.fullPath}</span>
+                    </div>
+                    <div class="route-meta">
+                        <span>${route.conditionsCount} conditions</span>
+                        <div class="route-actions" onclick="event.stopPropagation()">
+                            <button class="test-route-btn" onclick="testRoute('${route.method}', '${route.fullPath}')">
+                                🧪 Test
+                            </button>
+                        </div>
+                        <span class="expand-icon" id="expand-icon-${index}">▶</span>
+                    </div>
+                </div>
+                <div class="route-details" id="route-details-${index}">
+                    ${createRouteDetailsHTML(route)}
+                </div>
+            `;
+            
+            return routeDiv;
+        }
+
+        function createRouteDetailsHTML(route) {
+            let html = '';
+            
+            // Conditions
+            if (route.conditions.length > 0) {
+                html += '<div class="route-section"><h4>📋 Conditions</h4>';
+                route.conditions.forEach((condition, i) => {
+                    html += `
+                        <div class="condition-item">
+                            <div><strong>Condition ${i + 1}:</strong></div>
+                            <div class="condition-when">${JSON.stringify(condition.when, null, 2)}</div>
+                            <div class="condition-response">
+                                Status: ${condition.statusCode}
+                                ${condition.hasLatency ? ' • Has Latency' : ''}
+                                ${condition.hasTimeout ? ' • Has Timeout' : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            // Default Response
+            html += `
+                <div class="route-section">
+                    <h4>🎯 Default Response</h4>
+                    <div class="condition-item">
+                        <div class="condition-response">
+                            Status: ${route.defaultResponse.statusCode}
+                            ${route.defaultResponse.hasLatency ? ' • Has Latency' : ''}
+                            ${route.defaultResponse.hasTimeout ? ' • Has Timeout' : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+
+        function toggleRouteDetails(index) {
+            const details = document.getElementById(`route-details-${index}`);
+            const icon = document.getElementById(`expand-icon-${index}`);
+            
+            if (details.classList.contains('expanded')) {
+                details.classList.remove('expanded');
+                icon.classList.remove('expanded');
+            } else {
+                details.classList.add('expanded');
+                icon.classList.add('expanded');
+            }
+        }
+
+        async function testRoute(method, path) {
+            try {
+                const url = `http://localhost:3000${path}`;
+                
+                let response;
+                if (method === 'GET') {
+                    response = await fetch(url);
+                } else if (method === 'POST') {
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ test: true })
+                    });
+                } else {
+                    response = await fetch(url, { method });
+                }
+                
+                const data = await response.json();
+                
+                showMessage(`Test ${method} ${path}: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                    
+                // Show response in modal
+                currentFileContent = JSON.stringify(data, null, 2);
+                currentFileName = `${method} ${path} Response`;
+                document.getElementById('modal-title').textContent = `🧪 ${method} ${path}`;
+                document.getElementById('file-content').textContent = currentFileContent;
+                document.getElementById('file-modal').style.display = 'block';
+                
+            } catch (error) {
+                showMessage(`Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadFiles() {
+            const fileInput = document.getElementById('file-input');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                showMessage('Please select files to upload', 'error');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('upload-btn-text');
+            uploadBtn.innerHTML = '<span class="loading"></span> Uploading...';
+
+            try {
+                const formData = new FormData();
+                
+                for (let file of files) {
+                    formData.append('files', file);
+                }
+                
+                formData.append('path', document.getElementById('upload-path').value);
+                formData.append('validateJson', document.getElementById('validate-json').checked);
+                formData.append('autoFormat', document.getElementById('auto-format').checked);
+                formData.append('backupExisting', document.getElementById('backup-existing').checked);
+
+                const response = await fetch('/admin/files/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const successCount = data.results.filter(r => r.success).length;
+                    const failCount = data.results.filter(r => !r.success).length;
+                    
+                    let message = `Upload completed: ${successCount} successful`;
+                    if (failCount > 0) {
+                        message += `, ${failCount} failed`;
+                        data.results.filter(r => !r.success).forEach(result => {
+                            showMessage(`Failed to upload ${result.filename}: ${result.error}`, 'error');
+                        });
+                    }
+                    
+                    showMessage(message, successCount > 0 ? 'success' : 'error');
+                    
+                    if (successCount > 0) {
+                        fileInput.value = '';
+                        document.getElementById('upload-path').value = '';
+                        loadFiles(); // Refresh file list
+                        loadRoutes(); // Refresh routes list
+                    }
+                } else {
+                    showMessage('Upload failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error uploading files: ' + error.message, 'error');
+            } finally {
+                uploadBtn.textContent = 'Upload Files';
+            }
+        }
+
+        async function refreshServer() {
+            const refreshBtn = document.getElementById('refresh-btn-text');
+            refreshBtn.innerHTML = '<span class="loading"></span> Refreshing...';
+
+            try {
+                const response = await fetch('/admin/refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ scope: 'all' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`Server refreshed: ${data.refreshed.configs} configs, ${data.refreshed.data} data files`, 'success');
+                    loadStatus();
+                    loadFiles();
+                    loadRoutes();
+                } else {
+                    showMessage('Refresh failed: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showMessage('Error refreshing server: ' + error.message, 'error');
+            } finally {
+                refreshBtn.textContent = '🔄 Refresh Server';
+            }
+        }
+
+        function downloadCurrentFile() {
+            if (currentFileContent && currentFileName) {
+                const blob = new Blob([currentFileContent], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentFileName.split('/').pop();
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('file-modal').style.display = 'none';
+            currentFileContent = '';
+            currentFileName = '';
+        }
+
+        function showMessage(text, type = 'success') {
+            const messagesContainer = document.getElementById('messages');
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            
+            messagesContainer.appendChild(message);
+            
+            setTimeout(() => {
+                message.remove();
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('file-modal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

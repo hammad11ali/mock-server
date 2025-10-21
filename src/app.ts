@@ -1,5 +1,6 @@
 import express from 'express';
 import { DynamicMockController } from './controllers/mockController';
+import adminRouter from './routes/adminRouter';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,9 @@ async function startServer() {
 
         // Health check endpoint
         app.get('/', dynamicMockController.healthCheck.bind(dynamicMockController));
+
+        // Admin interface routes
+        app.use('/admin', adminRouter);
 
         // Dynamic mock system - catch all API routes
         app.use('/api', ...dynamicMockController.getMiddleware());
@@ -46,6 +50,7 @@ async function startServer() {
             console.log('🚀 Dynamic Mock Server started successfully!');
             console.log(`📍 Server running on: http://localhost:${PORT}`);
             console.log(`🏥 Health check: http://localhost:${PORT}/`);
+            console.log(`🔧 Admin interface: http://localhost:${PORT}/admin`);
             console.log(` Dynamic APIs: http://localhost:${PORT}/api/*`);
             console.log('');
             console.log('✨ Available dynamic endpoints:');
@@ -53,6 +58,14 @@ async function startServer() {
             console.log('   GET  /api/users/:id - Get user by ID');
             console.log('   POST /api/users - Create new user');
             console.log('   GET  /api/products - List all products');
+            console.log('');
+            console.log('🔧 Admin endpoints:');
+            console.log('   GET  /admin/files - List all configuration files');
+            console.log('   POST /admin/files/upload - Upload new configuration files');
+            console.log('   GET  /admin/files/download/* - Download specific file');
+            console.log('   DELETE /admin/files/* - Delete specific file');
+            console.log('   POST /admin/refresh - Refresh server configurations');
+            console.log('   GET  /admin/status - Get server status');
         });
 
     } catch (error) {

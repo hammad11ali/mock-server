@@ -35,6 +35,7 @@ export class ConfigLoader {
   private configDir: string;
   private dataDir: string;
   private dataCache: Map<string, any> = new Map();
+  private lastRefreshTime: string | null = null;
 
   constructor(configDir: string, dataDir: string) {
     this.configDir = configDir;
@@ -55,6 +56,7 @@ export class ConfigLoader {
     await this.loadGlobalConfig();
     await this.loadRouteConfigs();
     await this.loadDataFiles();
+    this.lastRefreshTime = new Date().toISOString();
   }
 
   private async loadGlobalConfig(): Promise<void> {
@@ -177,6 +179,50 @@ export class ConfigLoader {
     this.routeConfigs.clear();
     this.dataCache.clear();
     await this.initialize();
+  }
+
+  // New methods for admin functionality
+  static getLastRefreshTime(): string | null {
+    if (!ConfigLoader.instance) {
+      return null;
+    }
+    return ConfigLoader.instance.lastRefreshTime;
+  }
+
+  static getConfigCount(): number {
+    if (!ConfigLoader.instance) {
+      return 0;
+    }
+    return ConfigLoader.instance.routeConfigs.size;
+  }
+
+  static getDataFileCount(): number {
+    if (!ConfigLoader.instance) {
+      return 0;
+    }
+    return ConfigLoader.instance.dataCache.size;
+  }
+
+  static async reloadConfigurations(): Promise<number> {
+    if (!ConfigLoader.instance) {
+      throw new Error('ConfigLoader not initialized');
+    }
+    const instance = ConfigLoader.instance;
+    instance.routeConfigs.clear();
+    await instance.loadRouteConfigs();
+    instance.lastRefreshTime = new Date().toISOString();
+    return instance.routeConfigs.size;
+  }
+
+  static async reloadDataFiles(): Promise<number> {
+    if (!ConfigLoader.instance) {
+      throw new Error('ConfigLoader not initialized');
+    }
+    const instance = ConfigLoader.instance;
+    instance.dataCache.clear();
+    await instance.loadDataFiles();
+    instance.lastRefreshTime = new Date().toISOString();
+    return instance.dataCache.size;
   }
 
   destroy(): void {

@@ -5,17 +5,19 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "xcopy src\\config\\*.* dist\\config\\ /E /I /Y && xcopy src\\data\\*.* dist\\data\\ /E /I /Y",
+    "copy-assets": "xcopy src\\config\\*.* dist\\config\\ /E /I /Y && xcopy src\\data\\*.* dist\\data\\ /E /I /Y && copy src\\admin.html dist\\admin.html",
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts",
     "watch": "tsc -w"
   },
   "dependencies": {
     "express": "^4.17.1",
+    "multer": "^1.4.5-lts.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
+    "@types/multer": "^1.4.13",
     "@types/node": "^16.11.7",
     "@types/uuid": "^10.0.0",
     "ts-node": "^10.4.0",
