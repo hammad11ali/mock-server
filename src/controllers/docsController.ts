@@ -17,22 +17,22 @@ export class DocsController {
     // Configure marked with syntax highlighting
     const renderer = new marked.Renderer();
     
-    // Override code block rendering
-    renderer.code = ({ text, lang }: { text: string, lang?: string }) => {
-      if (lang && hljs.getLanguage(lang)) {
+    // Override code block rendering (marked v4 API)
+    renderer.code = (code: string, language: string | undefined) => {
+      if (language && hljs.getLanguage(language)) {
         try {
-          const highlighted = hljs.highlight(text, { language: lang }).value;
-          return `<pre class="hljs"><code class="language-${lang}">${highlighted}</code></pre>`;
+          const highlighted = hljs.highlight(code, { language }).value;
+          return `<pre class="hljs"><code class="language-${language}">${highlighted}</code></pre>`;
         } catch (err) {
           console.warn('Highlight.js error:', err);
         }
       }
       // Auto-detect if no language specified
       try {
-        const highlighted = hljs.highlightAuto(text).value;
+        const highlighted = hljs.highlightAuto(code).value;
         return `<pre class="hljs"><code>${highlighted}</code></pre>`;
       } catch (err) {
-        return `<pre><code>${text}</code></pre>`;
+        return `<pre><code>${code}</code></pre>`;
       }
     };
 
