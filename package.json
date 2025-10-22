@@ -5,11 +5,10 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "xcopy src\\config\\*.* dist\\config\\ /E /I /Y && xcopy src\\data\\*.* dist\\data\\ /E /I /Y && copy src\\admin.html dist\\admin.html",
+    "copy-assets": "copyfiles -u 1 \"src/config/**/*\" dist && copyfiles -u 1 \"src/data/**/*\" dist && copyfiles src/admin.html dist",
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts",
-    "watch": "tsc -w",
-    "postinstall": "npm run build"
+    "watch": "tsc -w"
   },
   "dependencies": {
     "@types/highlight.js": "^9.12.4",
@@ -25,6 +24,7 @@
     "@types/multer": "^1.4.13",
     "@types/node": "^16.11.7",
     "@types/uuid": "^10.0.0",
+    "copyfiles": "^2.4.1",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4"
   },
