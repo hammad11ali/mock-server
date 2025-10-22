@@ -1,0 +1,82 @@
+{
+  "method": "POST",
+  "path": "/ata/inquiry",
+  "conditions": [
+    {
+      "when": {
+        "body.ataInquiryRequest.nicNo": "4210107663244"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "data": {
+            "serviceHeader": "{{body.serviceHeader}}",
+            "transactionInfo": "{{body.transactionInfo}}",
+            "responseHeader": {
+              "responseCode": "01",
+              "responseDetails": [
+                "FAILED - Customer found in negative list"
+              ]
+            },
+            "ataInquiryResponse": [
+              {
+                "nicNo": "{{body.ataInquiryRequest.nicNo}}",
+                "isNegative": "Y",
+                "ataMessage": "Customer is blacklisted due to suspicious activities"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "when": {
+        "body.ataInquiryRequest.nicNo": "4210107663243"
+      },
+      "response": {
+        "statusCode": 200,
+        "body": {
+          "data": {
+            "serviceHeader": "{{body.serviceHeader}}",
+            "transactionInfo": "{{body.transactionInfo}}",
+            "responseHeader": {
+              "responseCode": "00",
+              "responseDetails": [
+                "SUCCESS"
+              ]
+            },
+            "ataInquiryResponse": [
+              {
+                "nicNo": "{{body.ataInquiryRequest.nicNo}}",
+                "isNegative": "N",
+                "ataMessage": ""
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "defaultResponse": {
+    "statusCode": 200,
+    "body": {
+      "data": {
+        "serviceHeader": "{{body.serviceHeader}}",
+        "transactionInfo": "{{body.transactionInfo}}",
+        "responseHeader": {
+          "responseCode": "00",
+          "responseDetails": [
+            "SUCCESS"
+          ]
+        },
+        "ataInquiryResponse": [
+          {
+            "nicNo": "{{body.ataInquiryRequest.nicNo}}",
+            "isNegative": "N",
+            "ataMessage": ""
+          }
+        ]
+      }
+    }
+  }
+}

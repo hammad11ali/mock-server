@@ -38,6 +38,14 @@ export class TemplateEngine {
   }
 
   private static replaceVariables(str: string, context: TemplateContext): any {
+    // Check if the entire string is just a template variable (e.g., "{{body.serviceHeader}}")
+    const fullMatch = /^\{\{([^}]+)\}\}$/.exec(str);
+    if (fullMatch) {
+      const value = this.resolveVariable(fullMatch[1].trim(), context);
+      // Return the object/array directly without stringifying
+      return value !== undefined ? value : str;
+    }
+    
     // Replace template variables like {{params.id}}, {{query.status}}, etc.
     return str.replace(/\{\{([^}]+)\}\}/g, (match, variable) => {
       const value = this.resolveVariable(variable.trim(), context);

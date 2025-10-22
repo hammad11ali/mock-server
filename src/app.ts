@@ -59,13 +59,16 @@ async function startServer() {
             console.log(`📍 Server running on: http://localhost:${PORT}`);
             console.log(`🏥 Health check: http://localhost:${PORT}/`);
             console.log(`🔧 Admin interface: http://localhost:${PORT}/admin`);
-            console.log(` Dynamic APIs: http://localhost:${PORT}/api/*`);
+            console.log(`📡 Dynamic APIs: http://localhost:${PORT}/api/*`);
             console.log('');
             console.log('✨ Available dynamic endpoints:');
-            console.log('   GET  /api/users - List all users');
-            console.log('   GET  /api/users/:id - Get user by ID');
-            console.log('   POST /api/users - Create new user');
-            console.log('   GET  /api/products - List all products');
+            
+            // Dynamically load and display all configured routes
+            const routeConfigs = dynamicMockController['configLoader'].getAllRouteConfigs();
+            routeConfigs.forEach(config => {
+                console.log(`   ${config.method.padEnd(6)} /api${config.path}`);
+            });
+            
             console.log('');
             console.log('� Documentation endpoints:');
             console.log('   GET  /docs - Documentation index');
